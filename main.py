@@ -4,7 +4,7 @@ import pygame
 pygame.init()
 DISPLAY = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 FPSCLOCK = pygame.time.Clock()
-FONT = pygame.font.Font(None, 80)
+FONT = pygame.font.SysFont(None, 80)
 while True:
     event_upkeep = []
     for event in pygame.event.get():

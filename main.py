@@ -4,7 +4,8 @@ import pygame
 pygame.init()
 DISPLAY = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 FPSCLOCK = pygame.time.Clock()
-FONT = pygame.font.SysFont(None, 80)
+BIGFONT = pygame.font.SysFont(None, 80)
+SMALLFONT = pygame.font.SysFont(None, 40)
 while True:
     event_upkeep = []
     for event in pygame.event.get():
@@ -12,10 +13,11 @@ while True:
 
     DISPLAY.fill((255, 0, 0))
 
-    text = FONT.render(','.join(event_upkeep), True, (0, 0, 0))
-    DISPLAY.blit(text, (250, 250))
+    text = BIGFONT.render("{}".format(pygame.display.get_surface().get_size()), True, (0, 0, 0))
+    DISPLAY.blit(text, (350, 350))
 
-    text2 = FONT.render("{}".format(pygame.display.get_surface().get_size()), True, (0, 0, 0))
-    DISPLAY.blit(text2, (350, 350))
+    text = SMALLFONT.render("{}".format(pygame.display.get_surface().get_size()), True, (0, 0, 0))
+    DISPLAY.blit(text, (450, 450))
+
     pygame.display.update()
     FPSCLOCK.tick(60)

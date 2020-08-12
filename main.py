@@ -14,11 +14,11 @@ while True:
     event_upkeep = []
     for event in pygame.event.get():
         if event.type == pygame.MOUSEMOTION:
-            mouse_pos = event.pos
+            mouse_pos = [str(i) for i in event.pos}
 
     DISPLAY.fill((255, 0, 0))
 
-    text = BIGFONT.render(','.format(mouse_pos), True, (0, 0, 0))
+    text = BIGFONT.render(','.join(mouse_pos), True, (0, 0, 0))
     DISPLAY.blit(text, (350, 350))
 
     pygame.display.update()

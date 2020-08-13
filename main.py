@@ -16,9 +16,14 @@ def main():
     mos_pos = [0, 0]
     mos_down = False
 
-    slider1 = Slider(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 2 // 8, WINDOWHEIGHT * 1 // 8, 8)
+    sliderR = Slider(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 2 // 8, WINDOWHEIGHT * 1 // 8, 8)
+    sliderG = Slider(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 4 // 8, WINDOWHEIGHT * 1 // 8, 8)
+    sliderB = Slider(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 6 // 8, WINDOWHEIGHT * 1 // 8, 8)
+
     all_sliders = pygame.sprite.Group()
-    all_sliders.add(slider1)
+    all_sliders.add(sliderR)
+    all_sliders.add(sliderG)
+    all_sliders.add(sliderB)
 
     while True:
         for event in pygame.event.get():

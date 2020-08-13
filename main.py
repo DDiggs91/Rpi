@@ -1,8 +1,14 @@
 import pygame
+import platform
 
 # Window 800x480
 pygame.init()
-DISPLAY = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+print(platform.system())
+quit()
+if platform.system() == 'Windows':
+    DISPLAY = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+elif platform.system() ==
+    DISPLAY = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 WINDOWWIDTH, WINDOWHEIGHT = pygame.display.get_surface().get_size()
 FPSCLOCK = pygame.time.Clock()
 BIGFONT = pygame.font.SysFont(None, 80)

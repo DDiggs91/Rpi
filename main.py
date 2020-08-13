@@ -1,10 +1,9 @@
 import pygame
 from platform import system
 from phue import Bridge
-from colorsys import hsv_to_rgb
 
-b = Bridge('192.168.0.8')
-b.connect()
+bridge = Bridge('192.168.0.8')
+bridge.connect()
 
 
 def main():
@@ -22,7 +21,7 @@ def main():
     mos_down = False
 
     slider_hue = LightControl(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 2 // 8, WINDOWHEIGHT * 1 // 8,
-                              16, 'hue')
+                              32, 'hue')
     slider_saturation = LightControl(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 4 // 8,
                                      WINDOWHEIGHT * 1 // 8, 16, 'saturation')
     slider_brightness = LightControl(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 6 // 8,
@@ -32,8 +31,7 @@ def main():
     all_sliders.add(slider_hue)
     all_sliders.add(slider_saturation)
     all_sliders.add(slider_brightness)
-    BACKGROUND_COLOR = [int(i * 255) for i in hsv_to_rgb(b.lights[0].hue / 65535 * 360, b.lights[0].saturation / 255,
-                                                         b.lights[0].brightness / 255)]
+    BACKGROUND_COLOR = [0, 0, 0]
 
     while True:
         for event in pygame.event.get():
@@ -50,9 +48,10 @@ def main():
             elif event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        DISPLAY.fill(BACKGROUND_COLOR)
+        DISPLAY.fill(hsb_to_rgb(slider_hue.hue, slider_saturation.sat, slider_brightness.bri))
         all_sliders.draw(DISPLAY)
         all_sliders.update(mos_pos, mos_down)
+
         pygame.display.update()
         FPSCLOCK.tick(60)
 
@@ -80,7 +79,7 @@ class Slider(pygame.sprite.Sprite):
         self.button.rect.topleft = (0, self.rect.height * (self.div // 2 - 1) // 16)
         self.image.blit(self.button.image, self.button.rect.topleft)
         self.selected = False
-        self.oldvalue = 0
+        self.old_value = 0
         self.value = 0
 
     def update(self, mos_pos, mos_down, *kwargs):
@@ -112,33 +111,58 @@ class LightControl(Slider):
     def __init__(self, width, height, x, y, divisions, mode):
         super().__init__(width, height, x, y, divisions)
         self.mode = mode
-        self.lights = b.lights
-        for l in self.lights:
-            l.transitiontime = 0
+        self.lights = bridge.lights
+        self.hue = self.lights[0].hue
+        self.sat = self.lights[0].saturation
+        self.bri = self.lights[0].brightness
+        for light in self.lights:
+            light.transitiontime = 0
 
     def update(self, mos_pos, mos_down, *kwargs):
         super().update(mos_pos, mos_down, *kwargs)
-        if self.value != self.oldvalue:
-            self.oldvalue = self.value
+        if self.value != self.old_value:
+            self.old_value = self.value
             light_value = self.div - (self.value + 1)
             if self.mode == 'hue':
-                for l in self.lights:
-                    l.hue = light_value * 65535 // self.div
+                self.hue = light_value * 65535 // (self.div - 2)
             elif self.mode == 'saturation':
-                for l in self.lights:
-                    l.saturation = light_value * 254 // self.div
+                self.sat = light_value * 254 // (self.div - 2)
             elif self.mode == 'brightness':
                 if light_value == 0:
-                    for l in self.lights:
-                        l.on = False
+                    for light in self.lights:
+                        light.on = False
                 else:
-                    for l in self.lights:
-                        if not l.on:
-                            l.on = True
-                        l.brightness = light_value * 254 // self.div
-            BACKGROUND_COLOR = [int(i * 255) for i in
-                                hsv_to_rgb(b.lights[0].hue / 65535 * 360, b.lights[0].saturation / 255,
-                                           b.lights[0].brightness / 255)]
+                    for light in self.lights:
+                        if not light.on:
+                            light.on = True
+                    self.bri = light_value * 254 // (self.div - 2)
+            for light in self.lights:
+                light.hue = self.hue
+                light.saturation = self.sat
+                light.brightness = self.bri
+
+
+def hsb_to_rgb(h, s, b):
+    h = h / 65535 * 360
+    s = s / 254
+    b = b / 254
+    C = b * s
+    X = C * (1 - abs(h / 60 % 2 - 1))
+    m = b - C
+    if h < 60:
+        (r, g, b) = (C, X, 0)
+    elif h < 120:
+        (r, g, b) = (X, C, 0)
+    elif h < 180:
+        (r, g, b) = (0, C, X)
+    elif h < 240:
+        (r, g, b) = (0, X, C)
+    elif h < 300:
+        (r, g, b) = (X, 0, C)
+    else:
+        (r, g, b) = (C, 0, X)
+    (r, g, b) = ((r + m) * 255, (g + m) * 255, (b + m) * 255)
+    return int(r), int(g), int(b)
 
 
 if __name__ == '__main__':

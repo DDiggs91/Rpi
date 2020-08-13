@@ -22,11 +22,11 @@ def main():
     mos_down = False
 
     slider_hue = LightControl(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 2 // 8, WINDOWHEIGHT * 1 // 8,
-                              32, 'hue')
+                              16, 'hue')
     slider_saturation = LightControl(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 4 // 8,
-                                     WINDOWHEIGHT * 1 // 8, 8, 'saturation')
+                                     WINDOWHEIGHT * 1 // 8, 16, 'saturation')
     slider_brightness = LightControl(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 6 // 8,
-                                     WINDOWHEIGHT * 1 // 8, 8, 'brightness')
+                                     WINDOWHEIGHT * 1 // 8, 16, 'brightness')
 
     all_sliders = pygame.sprite.Group()
     all_sliders.add(slider_hue)
@@ -136,8 +136,9 @@ class LightControl(Slider):
                         if not l.on:
                             l.on = True
                         l.brightness = light_value * 254 // self.div
-            BACKGROUND_COLOR = [int(i * 255) for i in hsv_to_rgb(b.lights[0].hue / 65535 * 360, b.lights[0].saturation / 255,
-                                                         b.lights[0].brightness / 255)]
+            BACKGROUND_COLOR = [int(i * 255) for i in
+                                hsv_to_rgb(b.lights[0].hue / 65535 * 360, b.lights[0].saturation / 255,
+                                           b.lights[0].brightness / 255)]
 
 
 if __name__ == '__main__':

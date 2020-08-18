@@ -199,7 +199,6 @@ class LightControlGroup(pygame.sprite.Group):
             sat = int(self.value[0] / self.hue_sat_control.max_r * 255)
             hue = int(self.value[1] / 360 * (2 ** 16 - 1))
             bri = int((self.bri_control.div - self.value[2] - 1) / (self.bri_control.div - 2) * 255)
-            print(bri)
             if bri == 0:
                 for light in self.lights:
                     light.brightness = 0

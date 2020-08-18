@@ -14,8 +14,8 @@ def main():
         DISPLAY = pygame.display.set_mode((480, 270))
     WINDOW_WIDTH, WINDOW_HEIGHT = pygame.display.get_surface().get_size()
     FPS_CLOCK = pygame.time.Clock()
-    BIGFONT = pygame.font.SysFont(None, min(WINDOW_WIDTH // 6, 80))
-    SMALLFONT = pygame.font.SysFont(None, max(WINDOW_WIDTH // 12, 40))
+    BIG_FONT = pygame.font.SysFont(None, min(WINDOW_WIDTH // 6, 80))
+    SMALL_FONT = pygame.font.SysFont(None, max(WINDOW_WIDTH // 12, 40))
 
     mos_pos = [0, 0]
     mos_down = False

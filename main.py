@@ -123,7 +123,7 @@ class CircleControl(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
 
-        self.button = CircleButton(sorted([80, self.radius // 20, 8])[1])
+        self.button = CircleButton(40)
         self.button.rect.center = (self.radius, self.radius)
         self.image.blit(self.button.image, self.button.rect.topleft)
 

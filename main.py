@@ -21,8 +21,8 @@ def main():
     mos_pos = [0, 0]
     mos_down = False
 
-    slider_brightness = LightControl(WINDOW_WIDTH * 1 // 16, WINDOW_HEIGHT * 6 // 8, WINDOW_WIDTH * 6 // 8,
-                                     WINDOW_HEIGHT * 1 // 8, 16)
+    slider_brightness = LightSliderControl(WINDOW_WIDTH * 1 // 16, WINDOW_HEIGHT * 6 // 8, WINDOW_WIDTH * 6 // 8,
+                                           WINDOW_HEIGHT * 1 // 8, 16)
 
     hue_sat_control = CircleControl(WINDOW_WIDTH // 4, WINDOW_HEIGHT // 2, WINDOW_HEIGHT // 4)
 
@@ -107,9 +107,11 @@ class Slider(pygame.sprite.Sprite):
 class CircleButton(pygame.sprite.Sprite):
     def __init__(self, radius):
         super().__init__()
+        self.radius = radius
         self.image = pygame.Surface([2 * radius, 2 * radius])
         self.rect = self.image.get_rect()
         self.image.fill((255, 255, 255))
+        self.image.set_colorkey((255, 255, 255))
         pygame.draw.circle(self.image, (120, 120, 120), (radius, radius), radius)
 
 
@@ -130,16 +132,21 @@ class CircleControl(pygame.sprite.Sprite):
         self.image.blit(self.button.image, self.button.rect.topleft)
 
         self.selected = False
+        self.value = (0, 0)
 
     def update(self, mos_pos, mos_down, *kwargs):
         if self.selected and mos_down:
-            print('clicked')
-        pygame.draw.circle(self.image, (255, 255, 255), (self.radius, self.radius), self.radius)
-        self.rect = self.image.get_rect()
-        self.rect.center = (self.x, self.y)
+            r, theta = car_to_pol(mos_pos[0] - self.radius - self.rect.x, self.rect.y - (mos_pos[1] - self.radius))
+            if r >= self.radius - self.button.radius:
+                r = self.radius - self.button.radius
+            self.value = (r, theta)
+            x, y = pol_to_car(r, theta)
+            self.button.rect.center = (x + self.radius, self.radius - y)
+            self.button.update()
 
-        self.button = CircleButton(sorted([80, self.radius // 20, 8])[1])
-        self.button.rect.center = (self.radius, self.radius)
+        self.image.fill((0, 0, 0))
+        pygame.draw.circle(self.image, (255, 255, 255), (self.radius, self.radius), self.radius)
+
         self.image.blit(self.button.image, self.button.rect.topleft)
 
     def clicked(self, mos_pos):
@@ -150,7 +157,19 @@ class CircleControl(pygame.sprite.Sprite):
                         self.selected = True
 
 
-class LightControl(Slider):
+class LightCircleControl(CircleControl):
+    def __init__(self, x, y, radius):
+        super().__init__(x, y, radius)
+        self.lights = bridge.lights
+        self.bri = self.lights[0].brightness
+        for light in self.lights:
+            light.transition_time = 0
+
+    def update(self, mos_pos, mos_down, *kwargs):
+        super().update(mos_pos, mos_down, **kwargs)
+
+
+class LightSliderControl(Slider):
     def __init__(self, width, height, x, y, divisions):
         super().__init__(width, height, x, y, divisions)
         self.lights = bridge.lights
@@ -174,6 +193,21 @@ class LightControl(Slider):
                     if not light.on:
                         light.on = True
                     light.brightness = self.bri
+
+
+class LightControl:
+    def __init__(self, x, y, width, height):
+        self.hue_sat_control = LightCircleControl(x, y, min(width, height))
+        self.bri_control = LightSliderControl(width // 16, height, x, y)
+
+    def update(self, mos_pos, mos_down):
+        self.hue_sat_control.update(mos_pos, mos_down)
+        self.bri_control.update(mos_pos, mos_down)
+
+    def draw(self, surface):
+        surface.blit(self.hue_sat_control.image)
+        surface.blit(self.bri_control.image)
+
 
 
 def hsb_to_rgb(h, s, b):
@@ -202,7 +236,15 @@ def hsb_to_rgb(h, s, b):
 def car_to_pol(x, y):
     r = (x ** 2 + y ** 2) ** 0.5
     theta = math.degrees(math.atan2(y, x))
-    return x, theta
+    if theta < 0:
+        theta += 360
+    return r, theta
+
+
+def pol_to_car(r, theta):
+    x = r * math.cos(math.radians(theta))
+    y = r * math.sin(math.radians(theta))
+    return x, y
 
 
 if __name__ == '__main__':

@@ -21,14 +21,9 @@ def main():
     mos_pos = [0, 0]
     mos_down = False
 
-    slider_brightness = LightSliderControl(WINDOW_WIDTH * 1 // 16, WINDOW_HEIGHT * 6 // 8, WINDOW_WIDTH * 6 // 8,
-                                           WINDOW_HEIGHT * 1 // 8, 16)
+    all_controls = LightControlGroup(int(WINDOW_WIDTH * .05), int(WINDOW_HEIGHT * .05), int(WINDOW_WIDTH * .90),
+                                     int(WINDOW_HEIGHT * .90))
 
-    hue_sat_control = CircleControl(WINDOW_WIDTH // 4, WINDOW_HEIGHT // 2, WINDOW_HEIGHT // 4)
-
-    all_controls = pygame.sprite.Group()
-    all_controls.add(slider_brightness)
-    all_controls.add(hue_sat_control)
     BACKGROUND_COLOR = [0, 0, 0]
 
     while True:
@@ -50,7 +45,7 @@ def main():
         all_controls.draw(DISPLAY)
         all_controls.update(mos_pos, mos_down)
         pygame.display.update()
-        FPS_CLOCK.tick(60)
+        FPS_CLOCK.tick(10)
 
 
 class SliderButton(pygame.sprite.Sprite):
@@ -62,7 +57,7 @@ class SliderButton(pygame.sprite.Sprite):
 
 
 class Slider(pygame.sprite.Sprite):
-    def __init__(self, width, height, x, y, divisions):
+    def __init__(self, x, y, width, height, divisions):
         super().__init__()
         self.image = pygame.Surface([round(width / divisions) * divisions, round(height / divisions) * divisions])
         self.image.fill((192, 192, 192))
@@ -133,12 +128,13 @@ class CircleControl(pygame.sprite.Sprite):
 
         self.selected = False
         self.value = (0, 0)
+        self.max_r = self.radius - self.button.radius
 
     def update(self, mos_pos, mos_down, *kwargs):
         if self.selected and mos_down:
             r, theta = car_to_pol(mos_pos[0] - self.radius - self.rect.x, self.rect.y - (mos_pos[1] - self.radius))
-            if r >= self.radius - self.button.radius:
-                r = self.radius - self.button.radius
+            if r >= self.max_r:
+                r = self.max_r
             self.value = (r, theta)
             x, y = pol_to_car(r, theta)
             self.button.rect.center = (x + self.radius, self.radius - y)
@@ -166,7 +162,7 @@ class LightCircleControl(CircleControl):
             light.transition_time = 0
 
     def update(self, mos_pos, mos_down, *kwargs):
-        super().update(mos_pos, mos_down, **kwargs)
+        super().update(mos_pos, mos_down)
 
 
 class LightSliderControl(Slider):
@@ -177,37 +173,45 @@ class LightSliderControl(Slider):
         for light in self.lights:
             light.transition_time = 0
 
-    def update(self, mos_pos, mos_down, *kwargs):
-        super().update(mos_pos, mos_down, *kwargs)
+
+class LightControlGroup(pygame.sprite.Group):
+    def __init__(self, x, y, width, height):
+        super().__init__()
+
+        self.lights = bridge.lights
+        for light in self.lights:
+            light.transition_time = 0
+
+        radius = min(width, height) // 2
+        self.hue_sat_control = LightCircleControl(x + radius, y + radius, radius)
+        self.bri_control = LightSliderControl(x + width * 15 // 16, y, x + width // 16, height, 16)
+        self.add(self.hue_sat_control)
+        self.add(self.bri_control)
+
+        self.value = [self.hue_sat_control.value[0], self.hue_sat_control.value[1], self.bri_control.value]
+        self.old_value = self.value.copy()
+
+    def update(self, mos_pos, mos_down, *args):
+        super().update(mos_pos, mos_down)
+        self.value = [self.hue_sat_control.value[0], self.hue_sat_control.value[1], self.bri_control.value]
         if self.value != self.old_value:
-            self.old_value = self.value
-            light_value = self.div - self.value - 1
-            if light_value == 0:
+            self.old_value = self.value.copy()
+            sat = int(self.value[0] / self.hue_sat_control.max_r * 255)
+            hue = int(self.value[1] / 360 * (2 ** 16 - 1))
+            bri = int((self.bri_control.div - self.value[2] - 1) / (self.bri_control.div - 2) * 255)
+            print(bri)
+            if bri == 0:
                 for light in self.lights:
-                    self.bri = 0
                     light.brightness = 0
                     light.on = False
             else:
-                self.bri = light_value * 255 // (self.div - 2)
                 for light in self.lights:
                     if not light.on:
                         light.on = True
-                    light.brightness = self.bri
-
-
-class LightControl:
-    def __init__(self, x, y, width, height):
-        self.hue_sat_control = LightCircleControl(x, y, min(width, height))
-        self.bri_control = LightSliderControl(width // 16, height, x, y)
-
-    def update(self, mos_pos, mos_down):
-        self.hue_sat_control.update(mos_pos, mos_down)
-        self.bri_control.update(mos_pos, mos_down)
-
-    def draw(self, surface):
-        surface.blit(self.hue_sat_control.image)
-        surface.blit(self.bri_control.image)
-
+                    light.brightness = bri
+                    light.saturation = sat
+                    light.hue = hue
+        return self.value
 
 
 def hsb_to_rgb(h, s, b):

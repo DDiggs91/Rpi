@@ -24,7 +24,7 @@ def main():
     all_controls = LightControlGroup(int(WINDOW_WIDTH * .05), int(WINDOW_HEIGHT * .05), int(WINDOW_WIDTH * .90),
                                      int(WINDOW_HEIGHT * .90))
 
-    BACKGROUND_COLOR = [0, 0, 0]
+    rgb = [0, 0, 0]
 
     while True:
         for event in pygame.event.get():
@@ -41,9 +41,10 @@ def main():
             elif event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        DISPLAY.fill((100, 0, 0))
+        DISPLAY.fill(rgb)
         all_controls.draw(DISPLAY)
         all_controls.update(mos_pos, mos_down)
+        rgb = hsb_to_rgb(all_controls.hue * 360 / (2 ** 16 - 1), all_controls.sat / 255, all_controls.bri / 255)
         pygame.display.update()
         FPS_CLOCK.tick(10)
 
@@ -71,8 +72,8 @@ class Slider(pygame.sprite.Sprite):
         self.button.rect.topleft = (0, self.rect.height * (self.div // 2 - 1) // 16)
         self.image.blit(self.button.image, self.button.rect.topleft)
         self.selected = False
-        self.old_value = 0
-        self.value = 0
+        self.old_value = 1
+        self.value = 1
 
     def update(self, mos_pos, mos_down, *kwargs):
         if self.selected and mos_down:
@@ -189,6 +190,9 @@ class LightControlGroup(pygame.sprite.Group):
         self.add(self.bri_control)
 
         self.value = [self.hue_sat_control.value[0], self.hue_sat_control.value[1], self.bri_control.value]
+        self.sat = int(self.value[0] / self.hue_sat_control.max_r * 255)
+        self.hue = int(self.value[1] / 360 * (2 ** 16 - 1))
+        self.bri = int((self.bri_control.div - self.value[2] - 1) / (self.bri_control.div - 2) * 255)
         self.old_value = self.value.copy()
 
     def update(self, mos_pos, mos_down, *args):
@@ -196,10 +200,10 @@ class LightControlGroup(pygame.sprite.Group):
         self.value = [self.hue_sat_control.value[0], self.hue_sat_control.value[1], self.bri_control.value]
         if self.value != self.old_value:
             self.old_value = self.value.copy()
-            sat = int(self.value[0] / self.hue_sat_control.max_r * 255)
-            hue = int(self.value[1] / 360 * (2 ** 16 - 1))
-            bri = int((self.bri_control.div - self.value[2] - 1) / (self.bri_control.div - 2) * 255)
-            if bri == 0:
+            self.sat = int(self.value[0] / self.hue_sat_control.max_r * 255)
+            self.hue = int(self.value[1] / 360 * (2 ** 16 - 1))
+            self.bri = int((self.bri_control.div - self.value[2] - 1) / (self.bri_control.div - 2) * 255)
+            if self.bri == 0:
                 for light in self.lights:
                     light.brightness = 0
                     light.on = False
@@ -207,10 +211,9 @@ class LightControlGroup(pygame.sprite.Group):
                 for light in self.lights:
                     if not light.on:
                         light.on = True
-                    light.brightness = bri
-                    light.saturation = sat
-                    light.hue = hue
-        return self.value
+                    light.brightness = self.bri
+                    light.saturation = self.sat
+                    light.hue = self.hue
 
 
 def hsb_to_rgb(h, s, b):

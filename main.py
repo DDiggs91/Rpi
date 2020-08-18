@@ -12,16 +12,16 @@ def main():
         DISPLAY = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     else:  # system() == 'Windows':
         DISPLAY = pygame.display.set_mode((480, 270))
-    WINDOWWIDTH, WINDOWHEIGHT = pygame.display.get_surface().get_size()
-    FPSCLOCK = pygame.time.Clock()
-    BIGFONT = pygame.font.SysFont(None, min(WINDOWWIDTH // 6, 80))
-    SMALLFONT = pygame.font.SysFont(None, max(WINDOWWIDTH // 12, 40))
+    WINDOW_WIDTH, WINDOW_HEIGHT = pygame.display.get_surface().get_size()
+    FPS_CLOCK = pygame.time.Clock()
+    BIGFONT = pygame.font.SysFont(None, min(WINDOW_WIDTH // 6, 80))
+    SMALLFONT = pygame.font.SysFont(None, max(WINDOW_WIDTH // 12, 40))
 
     mos_pos = [0, 0]
     mos_down = False
 
-    slider_brightness = LightControl(WINDOWWIDTH * 1 // 16, WINDOWHEIGHT * 6 // 8, WINDOWWIDTH * 6 // 8,
-                                     WINDOWHEIGHT * 1 // 8, 16)
+    slider_brightness = LightControl(WINDOW_WIDTH * 1 // 16, WINDOW_HEIGHT * 6 // 8, WINDOW_WIDTH * 6 // 8,
+                                     WINDOW_HEIGHT * 1 // 8, 16)
 
     all_sliders = pygame.sprite.Group()
     all_sliders.add(slider_brightness)
@@ -46,7 +46,7 @@ def main():
         all_sliders.draw(DISPLAY)
         all_sliders.update(mos_pos, mos_down)
         pygame.display.update()
-        FPSCLOCK.tick(60)
+        FPS_CLOCK.tick(60)
 
 
 class SliderButton(pygame.sprite.Sprite):
@@ -124,7 +124,7 @@ class LightControl(Slider):
                     if not light.on:
                         light.on = True
                     light.brightness = self.bri
-        print(self.bri)
+
 
 def hsb_to_rgb(h, s, b):
     h = h

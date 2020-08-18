@@ -1,4 +1,5 @@
 import pygame
+import math
 from platform import system
 from phue import Bridge
 
@@ -23,8 +24,11 @@ def main():
     slider_brightness = LightControl(WINDOW_WIDTH * 1 // 16, WINDOW_HEIGHT * 6 // 8, WINDOW_WIDTH * 6 // 8,
                                      WINDOW_HEIGHT * 1 // 8, 16)
 
-    all_sliders = pygame.sprite.Group()
-    all_sliders.add(slider_brightness)
+    hue_sat_control = CircleControl(WINDOW_WIDTH // 4, WINDOW_HEIGHT // 2, WINDOW_HEIGHT // 4)
+
+    all_controls = pygame.sprite.Group()
+    all_controls.add(slider_brightness)
+    all_controls.add(hue_sat_control)
     BACKGROUND_COLOR = [0, 0, 0]
 
     while True:
@@ -33,18 +37,18 @@ def main():
                 mos_pos = event.pos
             elif event.type == pygame.MOUSEBUTTONDOWN and not mos_down:
                 mos_down = True
-                for sprite in all_sliders:
+                for sprite in all_controls:
                     sprite.clicked(mos_pos)
             elif event.type == pygame.MOUSEBUTTONUP and mos_down:
                 mos_down = False
-                for sprite in all_sliders:
+                for sprite in all_controls:
                     sprite.selected = False
             elif event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        DISPLAY.fill((0, 0, 0))
-        all_sliders.draw(DISPLAY)
-        all_sliders.update(mos_pos, mos_down)
+        DISPLAY.fill((100, 0, 0))
+        all_controls.draw(DISPLAY)
+        all_controls.update(mos_pos, mos_down)
         pygame.display.update()
         FPS_CLOCK.tick(60)
 
@@ -90,6 +94,52 @@ class Slider(pygame.sprite.Sprite):
                 self.rect.width * (self.div // 4 - 1) // (self.div // 2), i * self.rect.height // self.div),
                              (self.rect.width * (self.div // 4 + 1) // (self.div // 2),
                               i * self.rect.height // self.div))
+        self.image.blit(self.button.image, self.button.rect.topleft)
+
+    def clicked(self, mos_pos):
+        if self.rect.x + self.button.rect.x < mos_pos[0]:
+            if mos_pos[0] < self.rect.x + self.button.rect.x + self.button.rect.width:
+                if self.rect.y + self.button.rect.y < mos_pos[1]:
+                    if mos_pos[1] < self.rect.y + self.button.rect.y + self.button.rect.height:
+                        self.selected = True
+
+
+class CircleButton(pygame.sprite.Sprite):
+    def __init__(self, radius):
+        super().__init__()
+        self.image = pygame.Surface([2 * radius, 2 * radius])
+        self.rect = self.image.get_rect()
+        self.image.fill((255, 255, 255))
+        pygame.draw.circle(self.image, (120, 120, 120), (radius, radius), radius)
+
+
+class CircleControl(pygame.sprite.Sprite):
+    def __init__(self, x, y, radius):
+        super().__init__()
+        self.radius = radius
+        self.x = x
+        self.y = y
+        self.image = pygame.Surface([2 * radius, 2 * radius])
+        self.image.set_colorkey((0, 0, 0))
+        pygame.draw.circle(self.image, (255, 255, 255), (self.radius, self.radius), self.radius)
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.x, self.y)
+
+        self.button = CircleButton(sorted([80, self.radius // 20, 8])[1])
+        self.button.rect.center = (self.radius, self.radius)
+        self.image.blit(self.button.image, self.button.rect.topleft)
+
+        self.selected = False
+
+    def update(self, mos_pos, mos_down, *kwargs):
+        if self.selected and mos_down:
+            print('clicked')
+        pygame.draw.circle(self.image, (255, 255, 255), (self.radius, self.radius), self.radius)
+        self.rect = self.image.get_rect()
+        self.rect.center = (self.x, self.y)
+
+        self.button = CircleButton(sorted([80, self.radius // 20, 8])[1])
+        self.button.rect.center = (self.radius, self.radius)
         self.image.blit(self.button.image, self.button.rect.topleft)
 
     def clicked(self, mos_pos):
@@ -147,6 +197,12 @@ def hsb_to_rgb(h, s, b):
         (r, g, b) = (C, 0, X)
     (r, g, b) = ((r + m) * 255, (g + m) * 255, (b + m) * 255)
     return int(r), int(g), int(b)
+
+
+def car_to_pol(x, y):
+    r = (x ** 2 + y ** 2) ** 0.5
+    theta = math.degrees(math.atan2(y, x))
+    return x, theta
 
 
 if __name__ == '__main__':
